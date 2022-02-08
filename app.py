@@ -1,4 +1,5 @@
 import os
+import re
 import datetime
 from flask_sqlalchemy import SQLAlchemy
 
@@ -25,7 +26,14 @@ Session(app)
 
 # Configure Flask to use SQLAlchemy database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+
+uri = os.getenv("DATABASE_URL")  # or other relevant config var
+if uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+# rest of connection code using the connection string `uri`
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
+
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
