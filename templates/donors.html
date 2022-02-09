@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Donor List
+{% endblock %}
+
+{% block main %}
+    <div class="section">
+        <div class="row justify-content-center">
+            <div class="col">
+                <table class="table tablestriped">
+                    <thead>
+                        <tr>
+                            {% for key, value in donors[0].items() %}
+                                <th class="text-start">{{ key }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- TODO: Loop through the database entries to display them in this table -->
+                        {% for donor in donors %}
+                            <tr>
+                                <td class="text-start">{{ donor['AcceptedDate'] }}</td>
+                                <td class="text-start">{{ donor['ReturnedDate'] }}</td>
+                                <td class="text-start">{{ donor['AttemptedConcealment'] }}</td>
+                                <td class="text-start">{{ donor['CashValue'] }}</td>
+                                <td class="text-start">{{ donor['NonCashValue'] }}</td>
+                                <td class="text-start">{{ donor['IsAnonymous'] }}</td>
+                                <td class="text-start">{{ donor['RegulatedEntityId'] }}</td>
+                                <td class="text-start">{{ donor['RegulatedEntityName'] }}</td>
+                                <td class="text-start">{{ donor['Value'] }}</td>
+                                <td class="text-start">{{ donor['DonorName'] }}</td>
+                                <td class="text-start">{{ donor['DonorStatus'] }}</td>
+                                <td class="text-start">{{ donor['RegulatedDoneeType'] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

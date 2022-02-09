@@ -6,20 +6,24 @@
 
 {% block main %}
     <div class="section">
-        <table class="table tablestriped">
-            <thead>
-                <tr>
-                    <th class="text-start">Name</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- TODO: Loop through the database entries to display them in this table -->
-                {% for user in users %}
-                    <tr>
-                        <td class="text-start">{{ user["name"] }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="row justify-content-center">
+            <div class="col-md-3">
+                <table class="table tablestriped">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- TODO: Loop through the database entries to display them in this table -->
+                        {% for user in users %}
+                            <tr>
+                                <td class="text-center">{{ user["name"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 {% endblock %}
