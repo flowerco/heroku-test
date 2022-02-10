@@ -113,14 +113,19 @@ def fetch():
         mp_first = name_arr[0]
         mp_last = name_arr[len(name_arr)-1]
 
-        donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?start=0&rows=10&query=&sort=AcceptedDate&order=desc&et=pp&et=ppm&et=tp&et=perpar&et=rd&date=Reported' + \
-            '&from=&to=&rptPd=&prePoll=false&postPoll=true&quarters=2022Q1234&register=gb&register=ni&register=none&period=3765&period=3767&period=3718&period=3720&period=3714&period=3716' + \
-                '&period=3710&period=3712&period=3706&period=3708&period=3702&period=3704&period=3698&period=3700&period=3676&period=3695&period=3604&period=3602&period=3600&period=3598' +\
-                    '&period=3594&period=3596&period=3578&period=3580&period=3574&period=3576&period=3570&period=3572&period=3559&period=3524&period=3567&period=3522&period=3520&period=3518' + \
-                        '&period=2513&period=2507&period=2509&period=2511&period=1485&period=1487&period=1480&period=1481&period=1477&period=1478&period=1476&period=1474&period=1471&period=1473' +\
-                            '&period=1466&period=463&period=1465&period=460&period=447&period=444&period=442&period=438&period=434&period=409&period=427&period=403&period=288&period=302&period=304' +\
-                                '&period=300&period=280&period=218&period=206&period=208&period=137&period=138&period=128&period=73&period=69&period=61&period=63&period=50&period=40&period=39&period=5' +\
-                                    '&isIrishSourceYes=true&isIrishSourceNo=true&includeOutsideSection75=true'
+        # Identify the current date as the maximum date to query.
+        run_dt = datetime.date.today().strftime("%Y-%m-%d")
+        
+        donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
+            '&query=' + mp_first + '%20' + mp_last +\
+                '&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received' +\
+                    '&from=2017-01-01&to=' + run_dt +\
+                        '&prePoll=false&postPoll=true&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty' +\
+                            '&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&register=gb' +\
+                                '&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber' +\
+                                    '&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'
+
+        # donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?&query=Hilary%20Benn&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received&from=2017-01-01&to=2022-02-28&prePoll=false&postPoll=true&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&register=gb&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'
 
         # Request the URL and parse the JSON
         response = requests.get(donor_url)
@@ -155,3 +160,9 @@ def fetch():
 
     else:
         return render_template("/fetch.html")
+
+
+@app.route("/test")
+def test():
+
+    return render_template("/test.html")

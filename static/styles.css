@@ -21,3 +21,34 @@ nav .navbar-brand .green
 {
     color: #2e944b;
 }
+
+.col1 {
+    background-color: green;
+    border-radius: 20px;
+    margin: 0 1rem;
+    padding-top: 2rem;
+}
+
+.col2 {
+    /* background-color: lightskyblue; */
+    border-radius: 20px;
+    /* padding-top: 2rem; */
+}
+
+.row1 {
+    /* background-color: lightsalmon; */
+    border-radius: 20px;
+    margin: 0 2rem;
+}
+
+.row2 {
+    /* background-color: aqua; */
+    border-radius: 20px;
+    margin: 0 2rem;
+    padding: 2rem 0;
+}
+
+.row3 {
+    border-radius: 20px;
+    margin: 0 2rem;
+}
