@@ -1,6 +1,8 @@
-import os
+import pandas as pd
+import numpy as np
 import requests
-import datetime
+import json
+from datetime import date, datetime
 
 from flask import redirect, render_template, request, session
 from functools import wraps
@@ -56,19 +58,21 @@ def get_mp_details(name):
 
     if mp_data:
         mp_id = mp_data[0]['value']['id']
+        mp_const = mp_data[0]['value']['latestHouseMembership']['membershipFrom']
         mp_thumb = mp_data[0]['value']['thumbnailUrl']
     else:
         mp_id = None
+        mp_const = None
         mp_thumb = None
 
-    return mp_id, mp_thumb
+    return mp_id, mp_const, mp_thumb
 
 def get_donations(mp_name):
 
     name_string = mp_name.replace(" ", "%20")
 
     # Identify the current date as the maximum date to query.
-    run_dt = datetime.date.today().strftime("%Y-%m-%d")
+    run_dt = date.today().strftime("%Y-%m-%d")
         
     donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
         '&query=' + name_string +\
@@ -90,7 +94,7 @@ def get_donations(mp_name):
     # Specify the attributes we want to keep
     donor_cols = [
         'AcceptedDate', 'ReturnedDate', 'AttemptedConcealment', 'CashValue', 'NonCashValue',
-        'IsAnonymous', 'Value', 'DonorName', 'DonorStatus'
+        'IsAnonymous', 'Value', 'DonorName', 'DonorStatus', 'DonationType'
     ]
 
     # For each row extracted from the JSON, add only the required attributes to a smaller list of dictionaries
@@ -104,6 +108,36 @@ def get_donations(mp_name):
             my_donors.append(temp_dict)
     
     return my_donors
+
+def donor_etl(donors):
+    """ Organise the list of donations by year, group by donor and limit by size. """
+
+    # We can probably use various reduce functions, iterating through items, etc
+    # but let's go to town and convert to a pandas dataframe. Go with what you know!
+
+    df = pd.json_normalize(donors)
+
+    # Correct some of the field formatting:
+    # 1. The date is an awful Unix timestamp. Extract the substr containing datetime in seconds.
+    df['DateNum'] = df['AcceptedDate'].str[6:19].astype(int)/1000.
+    df['Date'] = pd.to_datetime(df['DateNum'], unit='s')
+    df['Year'] = df['Date'].dt.year
+
+    # 2. Add a flag for whether the donation was returned
+    df['Returned?'] = ~df['ReturnedDate'].isna()
+
+    # 3. Group by year and donor, then sort output
+    df2 = df.groupby(['Year','DonorName','DonationType','DonorStatus']).agg({'Returned?': 'any', 'Value': 'sum'})
+    df2.sort_values(by=['Year','Value'], inplace=True, ascending=False)
+    df2.reset_index(inplace=True)
+    df2['Returned?'] = np.where(df2['Returned?'], 'Y','N')
+
+    df_out = df2[['Year', 'Returned?', 'Value', 'DonorName', 'DonorStatus', 'DonationType']].copy()
+
+    # Note we have to convert the dataframe to a JSON string, then load it as an object.
+    json_out = json.loads(df_out.to_json(orient='records'))
+
+    return json_out
 
 
 def gbp(value):
