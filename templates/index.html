@@ -1,28 +1,48 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    User List
+    Homepage
 {% endblock %}
 
 {% block main %}
-    <div class="section">
-        <div class="row justify-content-center">
-            <div class="col-md-3">
-                <table class="table tablestriped">
-                    <thead>
-                        <tr>
-                            <th class="text-center">Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- TODO: Loop through the database entries to display them in this table -->
-                        {% for user in users %}
-                            <tr>
-                                <td class="text-center">{{ user["name"] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+      <div class="segment container-fluid check-seg">
+        <div class="row">
+            <div class="col-md-5 col2 my-auto">
+                <h2 class="mb-3">Who's paying for your leaders?</h2>
+                <img class="mb-3 img-fluid" alt="Puppet in a suit" src="https://media.istockphoto.com/photos/business-marionettes-picture-id538642946">
+            </div>
+            <div class="col-md-7">
+                <div class="row1 text-start">
+                    <h6 class="mt-2 mb-3">UK MP Donors is a website to let the British public see how their leaders are
+                        funded, and who is influencing their decisions.
+                    </h6>
+                    <h6 class="mb-3">Enter the name of an MP to see all of their political donations received since 2017, along with
+                        Google links for each donor. 
+                    </h6>
+                    <h6>Get informed, get involved!</h6>
+                </div>
+                <div class="row2">
+                    <h3 class="mb-3 text-start">Search for an MP by name:</h3>
+                    <form action="/fetch" method="post">
+                        <div class="input-group form-md mb-3">
+                            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="mpname" name="mpname" placeholder="MP Name" type="text">
+                            <button class="btn btn-primary" type="submit">Search Donor Data</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="row2">
+                    <h3 class="mb-3 text-start">Search for your MP by postcode:</h3>
+                    <form action="/fetch" method="post">
+                        <div class="input-group form-sm mb-3">
+                            <input autocomplete="off"  class="form-control mx-auto w-auto" id="postcode" name="postcode" placeholder="UK Postcode" type="text">
+                            <button class="btn btn-primary" type="submit">Find My MP</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="row2">
+                    <h6 class="mb-3 text-start">For further reading, you can also find details on MPs' voting history and personal finiancial interests here:</h6>
+                    <a class="body-link" href="https://www.theyworkforyou.com">https://www.theyworkforyou.com</a>
+                </div>
             </div>
         </div>
     </div>
