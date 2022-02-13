@@ -1,7 +1,3 @@
-import os
-import datetime
-import requests
-
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
@@ -55,24 +51,27 @@ def fetch():
             return apology("Invalid name entered")
 
     # Once the MP name is defined, we can get their ID and thumbnail image
-    mp_id, mp_const, mp_thumb = get_mp_details(mp_name)
+    mp_display_name, mp_id, mp_const, mp_thumb = get_mp_details(mp_name)
 
     # If the ID was returned successfully, create an object to supply to the results page.
     if not mp_id:
         return apology(mp_name + " is not a current MP")
-    mp = {'name':mp_name, 'const':mp_const, 'thumbnail': mp_thumb}
 
     # Now that we have all required details for the MP, we can search for their donors
     mp_donors = get_donations(mp_name)
-
+    
     # Organise the donations by year and size, group by donor, and limit to the biggest 10 per year.
     if mp_donors:
-        final_donors = donor_etl(mp_donors)
+        final_donors, year_list, total = donor_etl(mp_donors)
     else:
         final_donors = None
+        year_list = None
+        total = 0
+
+    mp = {'name':mp_display_name, 'const':mp_const, 'total':total, 'thumbnail': mp_thumb}
     
     # Supply this subset of the returned JSON to the html page
-    return render_template("/donors.html", mp = mp, donors = final_donors)
+    return render_template("/donors.html", mp = mp, years = year_list, donors = final_donors)
 
 
 @app.route('/redirect_to')

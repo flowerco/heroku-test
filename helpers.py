@@ -43,10 +43,10 @@ def get_mp_name(postcode):
 
     return mp_name
 
-def get_mp_details(name):
+def get_mp_details(search_name):
     """ Search for the ID and thumbnail image of the MP by name. """
     # If the postcode contains spaces, replace with '%20' for the search URL
-    search_string = name.replace(" ", "%20")
+    search_string = search_name.replace(" ", "%20")
 
     post_url = 'https://members-api.parliament.uk/api/Members/' +\
         'Search?Name=' + search_string + '&skip=0&take=20'
@@ -57,15 +57,18 @@ def get_mp_details(name):
     mp_data = details.json()['items']
 
     if mp_data:
+        mp_name = mp_data[0]['value']['nameDisplayAs']
         mp_id = mp_data[0]['value']['id']
         mp_const = mp_data[0]['value']['latestHouseMembership']['membershipFrom']
         mp_thumb = mp_data[0]['value']['thumbnailUrl']
     else:
+        mp_name = search_name
         mp_id = None
         mp_const = None
         mp_thumb = None
 
-    return mp_id, mp_const, mp_thumb
+    return mp_name, mp_id, mp_const, mp_thumb
+
 
 def get_donations(mp_name):
 
@@ -77,7 +80,7 @@ def get_donations(mp_name):
     donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
         '&query=' + name_string +\
             '&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received' +\
-                '&from=2017-01-01&to=' + run_dt +\
+                '&from=2015-01-01&to=' + run_dt +\
                     '&prePoll=false&postPoll=true&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty' +\
                         '&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&register=gb' +\
                             '&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber' +\
@@ -134,12 +137,28 @@ def donor_etl(donors):
 
     df_out = df2[['Year', 'Returned?', 'Value', 'DonorName', 'DonorStatus', 'DonationType']].copy()
 
+    total = df_out['Value'].sum()
+
     # Note we have to convert the dataframe to a JSON string, then load it as an object.
     json_out = json.loads(df_out.to_json(orient='records'))
 
-    return json_out
+    # We want to show the annual records separately, so let's create a separate list of dicts for each.
+    year_list = df_out.Year.unique().tolist()
+    year_list.sort(reverse=True)
+    # Create a list for each year
+    dict1 = {}
+    for i in year_list:
+        dict1[i] = []
+    # Add the dicts we want to each list depending on the year
+    key_list = ['Value','DonorName','DonationType','Returned?']
+    for d in json_out:
+        dict1[d["Year"]].append({key: d[key] for key in key_list })
+    # Make a final list of all the annual dictionaries
+    json_final = [dict1]
+
+    return json_out, year_list, total
 
 
 def gbp(value):
     """Format value as GBP."""
-    return f"£{value:,.2f}"
+    return f"£{value:,.0f}"
