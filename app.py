@@ -58,7 +58,7 @@ def fetch():
         return apology(mp_name + " is not a current MP")
 
     # Now that we have all required details for the MP, we can search for their donors
-    mp_donors = get_donations(mp_name)
+    mp_donors = get_donations(mp_display_name)
     
     # Organise the donations by year and size, group by donor, and limit to the biggest 10 per year.
     if mp_donors:
