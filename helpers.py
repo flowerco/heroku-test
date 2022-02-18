@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 import requests
 import json
-from datetime import date, datetime
 
-from flask import redirect, render_template, request, session
+from datetime import date
+from flask import render_template
 from functools import wraps
 
 
@@ -45,8 +45,11 @@ def get_mp_name(postcode):
 
 def get_mp_details(search_name):
     """ Search for the ID and thumbnail image of the MP by name. """
-    # If the postcode contains spaces, replace with '%20' for the search URL
+
+    # If the MP name contains spaces, replace with '%20' for the search URL
     search_string = search_name.replace(" ", "%20")
+
+    print(search_string)
 
     post_url = 'https://members-api.parliament.uk/api/Members/' +\
         'Search?Name=' + search_string + '&skip=0&take=20'
@@ -70,12 +73,88 @@ def get_mp_details(search_name):
     return mp_name, mp_id, mp_const, mp_thumb
 
 
-def get_donations(mp_name):
+def get_all_donations():
+    # Pull the full history of donations.
+    run_dt = date.today().strftime("%Y-%m-%d")
+
+    donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
+            '&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received' +\
+                '&from=2015-01-01&to=' + run_dt +\
+                    '&prePoll=false&postPoll=true&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty' +\
+                        '&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&register=gb' +\
+                            '&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber' +\
+                                '&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'
+    
+    # donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?&query=&sort=Value&order=desc&et=pp&et=ppm&et=tp&et=perpar&et=rd&date=Received&from=2015-01-01&to=2022-02-02&rptPd=&prePoll=false&postPoll=true&register=gb&register=ni&register=none&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&isIrishSourceYes=true&isIrishSourceNo=true&includeOutsideSection75=true'
+    # Request the URL and parse the JSON
+    response = requests.get(donor_url)
+    response.raise_for_status() # raise exception if invalid response
+    all_donors = response.json()['Result']
+
+    if not all_donors:
+        return None
+
+    return all_donors
+
+
+def donor_summary(all_donors):
+
+    df = pd.json_normalize(all_donors)
+
+    # Select MP donations only
+    # TODO: Should this be for the MP tables only?
+    # For the top donors it might be worth seeing donors who contributed to specific parties...
+    df = df[df['RegulatedDoneeType'] == "MP - Member of Parliament"]
+
+    # Correct some of the field formatting:
+    # 1. The date is an awful Unix timestamp. Extract the substr containing datetime in seconds.
+    df['DateNum'] = df['AcceptedDate'].str[6:19].astype(int)/1000.
+    df['Date'] = pd.to_datetime(df['DateNum'], unit='s')
+    df['Year'] = df['Date'].dt.year
+
+    # 2. Add a flag for whether the donation was returned
+    df['Returned?'] = ~df['ReturnedDate'].isna()
+
+    # 3. Fix the name format
+    df['Name'] = df['RegulatedEntityName'].str.replace('The Rt Hon | MP', '')
+
+    # The total value of donations per MP
+    df = df[['Returned?','Name','Value','DonorName']]
+    df_mp = df[~df['Returned?']].groupby('Name').agg({'Value':'sum'})
+    df_mp.sort_values(by='Value', inplace=True, ascending=False)
+    df_mp.reset_index(inplace=True)
+    df_mp = df_mp.head(10)
+    json_mp = json.loads(df_mp.to_json(orient='records'))
+
+    print(json_mp)
+
+    # The total value of donations per donor
+    # df_donor = df[~df['Returned?']].groupby('DonorName').agg({'Value':'sum'})
+    # df_donor.sort_values(by=['Value'], inplace=True, ascending=False)
+    # df_donor.reset_index(inplace=True)
+    # json_donor = json.loads(df_donor.to_json(orient='records'))
+
+    # The top 5 donors per year
+    # df_year = df[~df['Returned?']].groupby(['Year','DonorName']).agg({'Value':'sum'})
+    # df_year.sort_values(by=['Year','Value'], inplace=True, ascending=False)
+    # df_year.reset_index(inplace=True)
+    # df_year = df_year.assign(rnk=df_year.groupby(['Year'])['Value']
+    #                                  .rank(method='min', ascending=False))
+    # df_year = df_year[df_year['rnk']<=5]
+    # json_year = json.loads(df_year.to_json(orient='records'))
+
+    return json_mp
+
+
+def get_mp_donations(mp_name):
 
     name_string = mp_name.replace(" ", "%20")
 
     # Identify the current date as the maximum date to query.
     run_dt = date.today().strftime("%Y-%m-%d")
+
+    # Extract the latest date from the SQL db.
+
         
     donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
         '&query=' + name_string +\
@@ -112,53 +191,51 @@ def get_donations(mp_name):
     
     return my_donors
 
+
 def donor_etl(donors):
     """ Organise the list of donations by year, group by donor and limit by size. """
 
-    # We can probably use various reduce functions, iterating through items, etc
-    # but let's go to town and convert to a pandas dataframe. Go with what you know!
-
-    df = pd.json_normalize(donors)
+    df = donors.copy()
 
     # Correct some of the field formatting:
-    # 1. The date is an awful Unix timestamp. Extract the substr containing datetime in seconds.
-    df['DateNum'] = df['AcceptedDate'].str[6:19].astype(int)/1000.
-    df['Date'] = pd.to_datetime(df['DateNum'], unit='s')
-    df['Year'] = df['Date'].dt.year
+    # 1. The date and value are currently strings.
+    df['date'] = pd.to_datetime(df['receivedDate'], format='%d/%m/%Y')
+    df['year'] = df['date'].dt.year
+    df['value'] = df['value'].astype(np.double)
 
     # 2. Add a flag for whether the donation was returned
-    df['Returned?'] = ~df['ReturnedDate'].isna()
+    df['returned'] = df['acceptedDate'].isna()
 
     # 3. Group by year and donor, then sort output
-    df2 = df.groupby(['Year','DonorName','DonationType','DonorStatus']).agg({'Returned?': 'any', 'Value': 'sum'})
-    df2.sort_values(by=['Year','Value'], inplace=True, ascending=False)
+    df2 = df.groupby(['year','donorName','donationType','donorStatus']).agg({'returned': 'any', 'value': 'sum'})
+    df2.sort_values(by=['year','value'], inplace=True, ascending=False)
     df2.reset_index(inplace=True)
-    df2['Returned?'] = np.where(df2['Returned?'], 'Y','N')
+    df2['returned'] = np.where(df2['returned'], 'Y','N')
 
-    df_out = df2[['Year', 'Returned?', 'Value', 'DonorName', 'DonorStatus', 'DonationType']].copy()
+    df_out = df2[['year', 'returned', 'value', 'donorName', 'donorStatus', 'donationType']].copy()
 
-    total = df_out['Value'].sum()
+    total = df_out['value'].sum()
 
     # Note we have to convert the dataframe to a JSON string, then load it as an object.
     json_out = json.loads(df_out.to_json(orient='records'))
 
     # We want to show the annual records separately, so let's create a separate list of dicts for each.
-    year_list = df_out.Year.unique().tolist()
+    year_list = df_out.year.unique().tolist()
     year_list.sort(reverse=True)
     # Create a list for each year
     dict1 = {}
     for i in year_list:
         dict1[i] = []
     # Add the dicts we want to each list depending on the year
-    key_list = ['Value','DonorName','DonationType','Returned?']
+    key_list = ['value','donorName','donorStatus','donationType','returned']
     for d in json_out:
-        dict1[d["Year"]].append({key: d[key] for key in key_list })
+        dict1[d["year"]].append({key: d[key] for key in key_list })
     # Make a final list of all the annual dictionaries
     json_final = [dict1]
 
-    return json_out, year_list, total
+    return json_final, year_list, total
 
 
 def gbp(value):
     """Format value as GBP."""
-    return f"£{value:,.0f}"
+    return f"£{float(value):,.0f}"

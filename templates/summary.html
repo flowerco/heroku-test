@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Donation Summaries
+{% endblock %}
+
+{% block main %}
+    <div class="section">
+        <h2 class="font-weight-bold">MPs With the Most Donations Received</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-3 testcol">
+                <h3>Most Donations Overall: {{ mp.name }}</h3>
+                <img class="width-100 imgbox mb-3" alt="Your searched-for MP", 
+                src="{{ mp['thumbnail'] }}">
+                <h5 class="mb-3">MP for {{ mp.const }}</h5>
+                <h5 class="mb-3">Total Donations Since 2015:</h5>
+                <h5 class="mb-3">{{ mp.total | gbp }}</h5>
+                <form action="/" method="GET">
+                    <button class="btn btn-primary" type="submit">Back to Homepage</button>
+                </form>
+            </div>
+            <div class="col-md-9">
+                {% if summ is not none %}
+                    <table class="table tablestriped">
+                        <thead>
+                            <tr>
+                                <th class="text-start">MP Name</th>
+                                <th class="text-start">Donation Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- TODO: Loop through the database entries to display them in this table -->
+                            {% for donor in summ %}
+                                <tr>
+                                    <td class="text-start">{{ donor['entityName'] }}</td>
+                                    <td class="text-start">{{ donor['total'] | gbp }}</td>
+                                </tr>
+                            {% endfor %}       
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-start">
+                        <h5 class="my-3">No donors found for {{ mp.name }}</h5>
+                        <p> Remember: This doesn't mean they aren't being influenced by buisness interests.</p>
+                        <p> Their voting history and personal financial interests can be found here:</p>
+                        <a href="https://www.theyworkforyou.com">https://www.theyworkforyou.com</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <h2 class="font-weight-bold">Highest Value Donations Made to MPs</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                {% if summ is not none %}
+                    <table class="table tablestriped">
+                        <thead>
+                            <tr>
+                                <th class="text-start">Donor Name</th>
+                                <th class="text-start">Donation Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- TODO: Loop through the database entries to display them in this table -->
+                            {% for donor in summ %}
+                                <tr>
+                                    <td class="text-start">{{ donor['donorName'] }}</td>
+                                    <td class="text-start">{{ donor['total'] | gbp }}</td>
+                                </tr>
+                            {% endfor %}       
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-start">
+                        <h5 class="my-3">No donors found for {{ mp.name }}</h5>
+                        <p> Remember: This doesn't mean they aren't being influenced by buisness interests.</p>
+                        <p> Their voting history and personal financial interests can be found here:</p>
+                        <a href="https://www.theyworkforyou.com">https://www.theyworkforyou.com</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

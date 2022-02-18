@@ -1,8 +1,9 @@
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, g, flash, redirect, render_template, request, session
 from flask_session import Session
-from flask_sqlalchemy import SQLAlchemy
 
-from helpers import apology, get_mp_name, get_mp_details, donor_etl, get_donations, gbp
+from helpers import (apology, get_all_donations, get_mp_name, get_mp_details, donor_etl, 
+get_all_donations, get_mp_donations, donor_summary, gbp)
+from db_helpers import df_query_db, get_db, highest_mp_donations, highest_paying_donors, query_db
 
 # Configure application
 app = Flask(__name__)
@@ -28,10 +29,19 @@ def after_request(response):
     return response
 
 
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+
 @app.route("/")
 def index():
     """Show homepage with search bars"""
+
     return render_template("/index.html")
+
 
 # Test page to fetch the donor data
 @app.route("/fetch", methods = ["POST"])
@@ -58,10 +68,10 @@ def fetch():
         return apology(mp_name + " is not a current MP")
 
     # Now that we have all required details for the MP, we can search for their donors
-    mp_donors = get_donations(mp_display_name)
+    mp_donors = df_query_db("SELECT * FROM donations WHERE entityName like ?", ['%'+ mp_display_name + '%'])
     
     # Organise the donations by year and size, group by donor, and limit to the biggest 10 per year.
-    if mp_donors:
+    if not mp_donors.empty:
         final_donors, year_list, total = donor_etl(mp_donors)
     else:
         final_donors = None
@@ -70,8 +80,31 @@ def fetch():
 
     mp = {'name':mp_display_name, 'const':mp_const, 'total':total, 'thumbnail': mp_thumb}
     
+    # print("First row of donors: " + str(final_donors[0]))
+
     # Supply this subset of the returned JSON to the html page
     return render_template("/donors.html", mp = mp, years = year_list, donors = final_donors)
+
+@app.route("/summary")
+def summary():
+
+    top_mps = highest_mp_donations()
+
+    if not top_mps:
+        return apology("No donor data available")
+
+    # Get the MP details for the highest donations received
+    search_name = top_mps[0]['entityName']
+
+    for rep in (("The Rt Hon ",""), ("Sir",""), (' MP',''), ('Dr ',''),('Mr ',''), ('Mrs ',''), ('Ms ','')):
+        search_name = search_name.replace(*rep)
+
+    total = top_mps[0]['total']
+    mp_display_name, mp_id, mp_const, mp_thumb = get_mp_details(search_name)
+
+    mp = {'name':mp_display_name, 'const':mp_const, 'total':total, 'thumbnail': mp_thumb}
+
+    return render_template("/summary.html", mp = mp, summ = top_mps)
 
 
 @app.route('/redirect_to')

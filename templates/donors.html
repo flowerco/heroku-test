@@ -27,7 +27,7 @@
                                     aria-expanded="false" aria-controls="collapseProduct{{ year }}">{{ year }}</button>
                         </div>
                         <div class="collapse" id="collapseProduct{{ year }}">
-                            <table class="table tablestriped">
+                            <table class="table tablestriped w-auto">
                                 <thead>
                                     <tr>
                                         <th class="text-start">Donation Value</th>
@@ -39,13 +39,13 @@
                                 </thead>
                                 <tbody>
                                     <!-- TODO: Loop through the database entries to display them in this table -->
-                                    {% for donor in donors if donor["Year"] == year %}
+                                    {% for donor in donors[0][year] %}
                                         <tr>
-                                            <td class="text-start">{{ donor['Value'] | gbp }}</td>
-                                            <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['DonorName']) }}">{{ donor['DonorName'] }}</a></td>
-                                            <td class="text-start">{{ donor['DonorStatus'] }}</td>
-                                            <td class="text-start">{{ donor['DonationType'] }}</td>
-                                            <td class="text-start">{{ donor['Returned?'] }}</td>
+                                            <td class="text-start">{{ donor['value'] | gbp }}</td>
+                                            <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['donorName']) }}">{{ donor['donorName'] }}</a></td>
+                                            <td class="text-start">{{ donor['donorStatus'] }}</td>
+                                            <td class="text-start">{{ donor['donationType'] }}</td>
+                                            <td class="text-start">{{ donor['returned'] }}</td>
                                         </tr>
                                     {% endfor %}       
                                 </tbody>
@@ -55,7 +55,7 @@
                 {% else %}
                     <div class="text-start">
                         <h5 class="my-3">No donors found for {{ mp.name }}</h5>
-                        <p> Remember: This doesn't mean they aren't being influenced by buisness interests.</p>
+                        <p> Remember: This doesn't mean they aren't being influenced by business interests.</p>
                         <p> Their voting history and personal financial interests can be found here:</p>
                         <a href="https://www.theyworkforyou.com">https://www.theyworkforyou.com</a>
                     </div>
@@ -63,11 +63,4 @@
             </div>
         </div>
     </div>
-    <script>
-        $(document).ready(function() {
-            $('[data-toggle="toggle"]').change(function(){
-                $(this).parents().next('.hide').toggle();
-            });
-        });
-    </script>
 {% endblock %}
