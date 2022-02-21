@@ -1,3 +1,4 @@
+from cgitb import text
 import re
 import sqlite3
 from flask import g
@@ -28,27 +29,45 @@ def query_db(query, args=(), one=False):
 def df_query_db(query, args=(), one=False):
 
     conn = sqlite3.connect(DATABASE)
+
+    conn.text_factory = lambda b: b.decode(errors = 'ignore')
     
     df = pd.read_sql(query, conn, params = args)
 
     return (df.head(1) if df else None) if one else df
 
 
-
-
 def highest_mp_donations():
-
-    # Select the top 10 MPs by most donations received.
+    """ Return the top 10 MPs by amount of donations received. """
     results = query_db("SELECT entityName, sum(value) AS total FROM donations WHERE doneeType = 'MP - Member of Parliament' GROUP BY entityName ORDER BY total DESC LIMIT 10")
-
     return results
+
 
 def highest_paying_donors():
-
-    results = query_db("SELECT donorName, sum(value) AS total FROM donations WHERE doneeType = 'MP - Member of Parliament' GROUP BY donorName ORDER BY total DESC LIMIT 10")
-
+    """ Return the top 10 donors by £ amount and the total money donated, to political parties as well as MPs."""
+    results = query_db("SELECT donorName, donorStatus, sum(value) AS total FROM donations WHERE donorStatus != 'Public Fund' GROUP BY donorName, donorStatus ORDER BY total DESC LIMIT 10")
     return results
 
+
+def highest_mp_donors():
+    """ Return the top 10 donors by £ amount and the total money donated, to MPs only."""
+    results = query_db("SELECT donorName, donorStatus, sum(value) AS total FROM donations WHERE doneeType = 'MP - Member of Parliament' GROUP BY donorName, donorStatus ORDER BY total DESC LIMIT 10")
+    return results
+
+
+def find_donees(donor_list, mps_only=True):
+
+    # We want to create a dictionary of {'donor1':[donees], 'donor2':[donees], etc} #
+    results = {}
+    for donor in donor_list:
+        if mps_only:
+            temp = query_db("SELECT strftime('%Y',receivedDate) as year, entityName, sum(value) as total FROM donations WHERE donorName = ? AND doneeType = 'MP - Member of Parliament' GROUP BY year, entityName ORDER BY total DESC LIMIT 10", [donor['donorName']])
+        else:
+            temp = query_db("SELECT strftime('%Y',receivedDate) as year, entityName, sum(value) as total FROM donations WHERE donorName = ? GROUP BY year, entityName ORDER BY total DESC LIMIT 10", [donor['donorName']])
+
+        results[donor['donorName']] = temp
+    
+    return results
 
 
 # TODO: We will need some way of keeping the local DB updated... 

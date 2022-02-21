@@ -18,17 +18,19 @@
                     <button class="btn btn-primary" type="submit">Back to Homepage</button>
                 </form>
             </div>
-            <div class="col-md-9">
+            <div class="col-md-7">
                 {% if donors is not none %}
                 <h5 class="text-start my-3">Click to view donations by year:</h5>
+                <div class="accordion" id="my-accordion">
                     {% for year in years %}
-                        <div class="col-6 text-start">
-                            <button class="btn btn-primary mb-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProduct{{ year }}"
+                    <div class="accordion-item">
+                        <div class="accordion-header text-start" id="headingOne">
+                            <button class="accordion-button collapsed px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProduct{{ year }}"
                                     aria-expanded="false" aria-controls="collapseProduct{{ year }}">{{ year }}</button>
                         </div>
                         <div class="collapse" id="collapseProduct{{ year }}">
-                            <table class="table tablestriped w-auto">
-                                <thead>
+                            <table class="table tablestriped w-auto mx-auto my-3">
+                                <thead class="table-head table-light">
                                     <tr>
                                         <th class="text-start">Donation Value</th>
                                         <th class="text-start">Donor Name</th>
@@ -37,7 +39,7 @@
                                         <th class="text-start">Was the Donation Returned?</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="table-body">
                                     <!-- TODO: Loop through the database entries to display them in this table -->
                                     {% for donor in donors[0][year] %}
                                         <tr>
@@ -51,7 +53,9 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
                     {% endfor %}
+                </div>
                 {% else %}
                     <div class="text-start">
                         <h5 class="my-3">No donors found for {{ mp.name }}</h5>

@@ -82,8 +82,16 @@ nav .navbar-brand .green
     border-radius: 20px;
 }
 
-.table td.fit, 
-.table th.fit {
-    white-space: nowrap;
-    width: 1%;
+.sub-table {
+    background-color: lightblue;
+    border-radius: 20px;
+}
+
+.table-head, .table-body {
+    display: block;
+}
+
+.table-body {
+    max-height: 400px;
+    overflow-y: auto;
 }

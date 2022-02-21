@@ -5,8 +5,8 @@
 {% endblock %}
 
 {% block main %}
-    <div class="section">
-        <h2 class="font-weight-bold">MPs With the Most Donations Received</h2>
+    <div class="section mb-5">
+        <h2 class="font-weight-bold mb-4">MPs With the Most Donations Received</h2>
         <div class="row justify-content-center">
             <div class="col-md-3 testcol">
                 <h3>Most Donations Overall: {{ mp.name }}</h3>
@@ -19,10 +19,10 @@
                     <button class="btn btn-primary" type="submit">Back to Homepage</button>
                 </form>
             </div>
-            <div class="col-md-9">
+            <div class="col-md-5">
                 {% if summ is not none %}
                     <table class="table tablestriped">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th class="text-start">MP Name</th>
                                 <th class="text-start">Donation Value</th>
@@ -32,7 +32,7 @@
                             <!-- TODO: Loop through the database entries to display them in this table -->
                             {% for donor in summ %}
                                 <tr>
-                                    <td class="text-start">{{ donor['entityName'] }}</td>
+                                    <td class="text-start"><a href="/fetch?mpname={{ donor['entityName'] }}">{{ donor['entityName'] }}</a></td>
                                     <td class="text-start">{{ donor['total'] | gbp }}</td>
                                 </tr>
                             {% endfor %}       
@@ -50,27 +50,59 @@
         </div>
     </div>
     <div class="section">
-        <h2 class="font-weight-bold">Highest Value Donations Made to MPs</h2>
+        <h2 class="font-weight-bold mb-4">Donors Who Gave the Most Money to MPs</h2>
         <div class="row justify-content-center">
-            <div class="col-md-10">
-                {% if summ is not none %}
+            <div class="col-md-7">
+                {% if donors is not none %}
+                <div class="table-responsive">
                     <table class="table tablestriped">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th class="text-start">Donor Name</th>
+                                <th class="text-start">Donor Type</th>
                                 <th class="text-start">Donation Value</th>
+                                <th class="text-start">Click to See Top 10 Donees</th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- TODO: Loop through the database entries to display them in this table -->
-                            {% for donor in summ %}
+                            {% for donor in donors %}
                                 <tr>
-                                    <td class="text-start">{{ donor['donorName'] }}</td>
+                                    <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['donorName']) }}">{{ donor['donorName'] }}</a></td>
+                                    <td class="text-start">{{ donor['donorStatus'] }}</td>
                                     <td class="text-start">{{ donor['total'] | gbp }}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-primary mb-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDonor{{ loop.index }}"
+                                                aria-expanded="false" aria-controls="collapseDonor{{ loop.index }}">View Donations</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="collapse" id="collapseDonor{{ loop.index }}">
+                                            <table class="table sub-table tablestriped w-auto mx-auto">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-start">MP Name</th>
+                                                        <th class="text-start">Donation Value</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- TODO: Loop through the database entries to display them in this table -->
+                                                    {% for donee in donees[donor['donorName']] %}
+                                                        <tr>
+                                                            <td class="text-start"><a href="/fetch?mpname={{ donee['entityName'] }}">{{ donee['entityName'] }}</a></td>
+                                                            <td class="text-start">{{ donee['total'] | gbp }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
                                 </tr>
                             {% endfor %}       
                         </tbody>
                     </table>
+                </div>
                 {% else %}
                     <div class="text-start">
                         <h5 class="my-3">No donors found for {{ mp.name }}</h5>

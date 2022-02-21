@@ -49,8 +49,6 @@ def get_mp_details(search_name):
     # If the MP name contains spaces, replace with '%20' for the search URL
     search_string = search_name.replace(" ", "%20")
 
-    print(search_string)
-
     post_url = 'https://members-api.parliament.uk/api/Members/' +\
         'Search?Name=' + search_string + '&skip=0&take=20'
 
@@ -234,6 +232,13 @@ def donor_etl(donors):
     json_final = [dict1]
 
     return json_final, year_list, total
+
+
+def clean_name(name):
+    """ Remove extra text from an MP name so that the donation search API can find them."""
+    for replStr in (("The Rt Hon ",""), ("Sir",""), (' MP',''), ('Dr ',''),('Mr ',''), ('Mrs ',''), ('Ms ','')):
+        name = name.replace(*replStr)
+    return name
 
 
 def gbp(value):
