@@ -94,6 +94,9 @@ def fetch():
 @app.route("/summary")
 def summary():
 
+    # TODO: You know there's an 'Attempted Concealment' flag, right?
+    # Prime data for a summary chart!!! :-)
+
     # SUMMARY 1: MPs with highest value donations received.
     top_mps = highest_mp_donations()
 

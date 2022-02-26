@@ -1,7 +1,6 @@
 
 .check-seg {
-    background-color: darkgreen;
-    color: beige;
+    background-color: lightsteelblue;
     border-radius: 20px;
     padding: 2rem 2rem;
     max-width: 2000px;
@@ -15,10 +14,6 @@
     max-width: 60%;
 }
 
-.body-link {
-    color: beige;
-}
-
 .body-link:hover{
     color: red
 }
@@ -26,7 +21,7 @@
 /* Size for brand */
 nav .navbar-brand
 {
-    font-size: xx-large;
+    font-size: 300%;
 }
 
 /* Colors for brand */
@@ -46,6 +41,7 @@ nav .navbar-brand .green
 {
     color: #2e944b;
 }
+
 
 .col1 {
     background-color: green;
@@ -94,4 +90,17 @@ nav .navbar-brand .green
 .table-body {
     max-height: 400px;
     overflow-y: auto;
+}
+
+th:first-of-type {
+    border-top-left-radius: 20px;
+}
+th:last-of-type {
+border-top-right-radius: 20px;
+}
+tr:last-of-type td:first-of-type {
+border-bottom-left-radius: 20px;
+}
+tr:last-of-type td:last-of-type {
+border-bottom-right-radius: 20px;
 }
