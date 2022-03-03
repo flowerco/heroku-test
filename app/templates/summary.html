@@ -32,7 +32,7 @@
                             <!-- TODO: Loop through the database entries to display them in this table -->
                             {% for donor in summ %}
                                 <tr>
-                                    <td class="text-start"><a href="/fetch?mpname={{ donor['entityName'] }}">{{ donor['entityName'] }}</a></td>
+                                    <td class="text-start"><a href="/fetch?mpname={{ donor['entity_name'] }}">{{ donor['entity_name'] }}</a></td>
                                     <td class="text-start">{{ donor['total'] | gbp }}</td>
                                 </tr>
                             {% endfor %}       
@@ -68,8 +68,8 @@
                             <!-- TODO: Loop through the database entries to display them in this table -->
                             {% for donor in donors %}
                                 <tr>
-                                    <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['donorName']) }}">{{ donor['donorName'] }}</a></td>
-                                    <td class="text-start">{{ donor['donorStatus'] }}</td>
+                                    <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['donor_name']) }}">{{ donor['donor_name'] }}</a></td>
+                                    <td class="text-start">{{ donor['donor_status'] }}</td>
                                     <td class="text-start">{{ donor['total'] | gbp }}</td>
                                     <td class="text-center">
                                         <button class="btn btn-primary mb-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDonor{{ loop.index }}"
@@ -88,9 +88,9 @@
                                                 </thead>
                                                 <tbody>
                                                     <!-- TODO: Loop through the database entries to display them in this table -->
-                                                    {% for donee in donees[donor['donorName']] %}
+                                                    {% for donee in donees[donor['donor_name']] %}
                                                         <tr>
-                                                            <td class="text-start"><a href="/fetch?mpname={{ donee['entityName'] }}">{{ donee['entityName'] }}</a></td>
+                                                            <td class="text-start"><a href="/fetch?mpname={{ donee['entity_name'] }}">{{ donee['entity_name'] }}</a></td>
                                                             <td class="text-start">{{ donee['total'] | gbp }}</td>
                                                         </tr>
                                                     {% endfor %}

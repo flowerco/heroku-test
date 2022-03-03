@@ -153,7 +153,6 @@ def get_mp_donations(mp_name):
 
     # Extract the latest date from the SQL db.
 
-        
     donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
         '&query=' + name_string +\
             '&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received' +\
@@ -197,20 +196,20 @@ def donor_etl(donors):
 
     # Correct some of the field formatting:
     # 1. The date and value are currently strings.
-    df['date'] = pd.to_datetime(df['receivedDate'], format='%d/%m/%Y')
+    df['date'] = pd.to_datetime(df['received_date'], format='%Y-%m-%d')
     df['year'] = df['date'].dt.year
     df['value'] = df['value'].astype(np.double)
 
     # 2. Add a flag for whether the donation was returned
-    df['returned'] = df['acceptedDate'].isna()
+    df['returned'] = df['accepted_date'] == ""
 
     # 3. Group by year and donor, then sort output
-    df2 = df.groupby(['year','donorName','donationType','donorStatus']).agg({'returned': 'any', 'value': 'sum'})
+    df2 = df.groupby(['year','donor_name','donation_type','donor_status']).agg({'returned': 'any', 'value': 'sum'})
     df2.sort_values(by=['year','value'], inplace=True, ascending=False)
     df2.reset_index(inplace=True)
     df2['returned'] = np.where(df2['returned'], 'Y','N')
 
-    df_out = df2[['year', 'returned', 'value', 'donorName', 'donorStatus', 'donationType']].copy()
+    df_out = df2[['year', 'returned', 'value', 'donor_name', 'donor_status', 'donation_type']].copy()
 
     total = df_out['value'].sum()
 
@@ -225,7 +224,7 @@ def donor_etl(donors):
     for i in year_list:
         dict1[i] = []
     # Add the dicts we want to each list depending on the year
-    key_list = ['value','donorName','donorStatus','donationType','returned']
+    key_list = ['value','donor_name','donor_status','donation_type','returned']
     for d in json_out:
         dict1[d["year"]].append({key: d[key] for key in key_list })
     # Make a final list of all the annual dictionaries

@@ -1,57 +1,60 @@
-from cgitb import text
-import re
-import sqlite3
-from flask import g
 import pandas as pd
+from sqlalchemy import create_engine
+from datetime import date, datetime, timedelta
+from app.models import Donations
+from app import db
 
-DATABASE = 'donations.db'
+def get_latest_date():
+    """ Returns the last date at which donation data was added to the database."""
+    # TODO: Ideally this would be the latest date searched, to prevent multiple searches on the 
+    # same day, but Heroku doesn't have persistent storage, so we'd need a separate Postgres table...
+    # Maybe that's a better option though, as it would be much faster to query.
+    return Donations.query.order_by(Donations.addedDate.desc()).first().addedDate + timedelta(days=1)
 
-
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-
-    # Docs say to 'place this in get_db'. Can't be that simple, can it?
-    db.row_factory = sqlite3.Row
-    # Wow, it IS that simple! And don't call me Shirley...
-
-    return db
-
-
-def query_db(query, args=(), one=False):
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
+def query_db(query, one=False):
+    rv = db.engine.execute(query).fetchall()
     return (rv[0] if rv else None) if one else rv
 
-
-def df_query_db(query, args=(), one=False):
-
-    conn = sqlite3.connect(DATABASE)
-
-    conn.text_factory = lambda b: b.decode(errors = 'ignore')
-    
-    df = pd.read_sql(query, conn, params = args)
-
-    return (df.head(1) if df else None) if one else df
-
+def df_query_db(query, one=False):
+    rv = pd.read_sql(query, con=db.engine)
+    return (rv[0] if rv else None) if one else rv
 
 def highest_mp_donations():
     """ Return the top 10 MPs by amount of donations received. """
-    results = query_db("SELECT entityName, sum(value) AS total FROM donations WHERE doneeType = 'MP - Member of Parliament' GROUP BY entityName ORDER BY total DESC LIMIT 10")
+
+    query = """ SELECT entity_name, sum(value) AS total 
+    FROM donations WHERE donee_type = 'MP - Member of Parliament' 
+    GROUP BY entity_name 
+    ORDER BY total DESC LIMIT 10"""
+
+    results = query_db(query)
+
     return results
 
 
 def highest_paying_donors():
     """ Return the top 10 donors by £ amount and the total money donated, to political parties as well as MPs."""
-    results = query_db("SELECT donorName, donorStatus, sum(value) AS total FROM donations WHERE donorStatus != 'Public Fund' GROUP BY donorName, donorStatus ORDER BY total DESC LIMIT 10")
+
+    query = """ SELECT donor_name, donor_status, sum(value) AS total 
+    FROM donations WHERE donor_status != 'Public Fund' 
+    GROUP BY donor_name, donor_status 
+    ORDER BY total DESC LIMIT 10"""
+
+    results = query_db(query)
+
     return results
 
 
 def highest_mp_donors():
     """ Return the top 10 donors by £ amount and the total money donated, to MPs only."""
-    results = query_db("SELECT donorName, donorStatus, sum(value) AS total FROM donations WHERE doneeType = 'MP - Member of Parliament' GROUP BY donorName, donorStatus ORDER BY total DESC LIMIT 10")
+
+    query = """SELECT donor_name, donor_status, sum(value) AS total 
+    FROM donations WHERE donee_type = 'MP - Member of Parliament' 
+    GROUP BY donor_name, donor_status 
+    ORDER BY total DESC LIMIT 10"""
+
+    results = query_db(query)
+
     return results
 
 
@@ -61,12 +64,19 @@ def find_donees(donor_list, mps_only=True):
     results = {}
     for donor in donor_list:
         if mps_only:
-            temp = query_db("SELECT strftime('%Y',receivedDate) as year, entityName, sum(value) as total FROM donations WHERE donorName = ? AND doneeType = 'MP - Member of Parliament' GROUP BY year, entityName ORDER BY total DESC LIMIT 10", [donor['donorName']])
+            query = """SELECT entity_name, sum(value) as total 
+            FROM donations WHERE donor_name = '{0}' AND donee_type = 'MP - Member of Parliament' 
+            GROUP BY entity_name 
+            ORDER BY total DESC LIMIT 10""".format(donor['donor_name'])
         else:
-            temp = query_db("SELECT strftime('%Y',receivedDate) as year, entityName, sum(value) as total FROM donations WHERE donorName = ? GROUP BY year, entityName ORDER BY total DESC LIMIT 10", [donor['donorName']])
+            query = """SELECT entity_name, sum(value) as total 
+            FROM donations WHERE donor_name = '{0}'
+            GROUP BY entity_name 
+            ORDER BY total DESC LIMIT 10""".format(donor['donor_name'])
 
-        results[donor['donorName']] = temp
+        results[donor['donor_name']] = query_db(query)
     
+
     return results
 
 

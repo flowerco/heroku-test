@@ -44,9 +44,9 @@
                                     {% for donor in donors[0][year] %}
                                         <tr>
                                             <td class="text-start">{{ donor['value'] | gbp }}</td>
-                                            <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['donorName']) }}">{{ donor['donorName'] }}</a></td>
-                                            <td class="text-start">{{ donor['donorStatus'] }}</td>
-                                            <td class="text-start">{{ donor['donationType'] }}</td>
+                                            <td class="text-start"><a href="{{ url_for('redirect_to', link=donor['donor_name']) }}">{{ donor['donor_name'] }}</a></td>
+                                            <td class="text-start">{{ donor['donor_status'] }}</td>
+                                            <td class="text-start">{{ donor['donation_type'] }}</td>
                                             <td class="text-start">{{ donor['returned'] }}</td>
                                         </tr>
                                     {% endfor %}       
