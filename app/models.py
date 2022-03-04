@@ -14,3 +14,7 @@ class Donations(db.Model):
     nature_of_donation = db.Column(db.String)
     received_date = db.Column(db.Date)
     attempt_conceal = db.Column(db.String)
+
+class Updated(db.Model):
+    __tablename__="updated"
+    last_update = db.Column(db.Date, primary_key=True)

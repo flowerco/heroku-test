@@ -3,7 +3,7 @@ from flask_session import Session
 from app import app
 from helpers import (apology, clean_name, get_all_donations, get_mp_name, get_mp_details, donor_etl, 
 get_all_donations, get_mp_donations, donor_summary)
-from db_helpers import df_query_db, find_donees, highest_mp_donations, highest_mp_donors
+from db_helpers import update_database, df_query_db, find_donees, highest_mp_donations, highest_mp_donors
 
 
 @app.after_request
@@ -32,6 +32,9 @@ def index():
 # Test page to fetch the donor data
 @app.route("/fetch", methods = ["GET", "POST"])
 def fetch():
+
+    # STEP 0: First we update the database if required.
+    update_database()
 
     # STEP 1: Source the MP name to search for, from one of 3 input routes
 
@@ -78,11 +81,15 @@ def fetch():
     # Supply this subset of the returned JSON to the html page
     return render_template("/donors.html", mp = mp, years = year_list, donors = final_donors)
 
+
 @app.route("/summary")
 def summary():
 
     # TODO: You know there's an 'Attempted Concealment' flag, right?
     # Prime data for a summary chart!!! :-)
+
+    # STEP 0: First we update the database if required.
+    update_database()
 
     # SUMMARY 1: MPs with highest value donations received.
     top_mps = highest_mp_donations()
@@ -106,9 +113,7 @@ def summary():
 
     donees = find_donees(donors, mps_only=True)
 
-    # SUMMARY 3: Donors who donated the most, including to political parties, and who they donated to
-
-
+    # TODO: SUMMARY 3: Donors who donated the most, including to political parties, and who they donated to
 
     return render_template("/summary.html", mp=mp, summ=top_mps, donors=donors, donees=donees)
 
