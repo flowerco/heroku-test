@@ -3,9 +3,7 @@ import numpy as np
 import requests
 import json
 
-from datetime import date
 from flask import render_template
-from functools import wraps
 
 
 def apology(message, code=400):
@@ -71,124 +69,6 @@ def get_mp_details(search_name):
     return mp_name, mp_id, mp_const, mp_thumb
 
 
-def get_all_donations():
-    # Pull the full history of donations.
-    run_dt = date.today().strftime("%Y-%m-%d")
-
-    donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
-            '&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received' +\
-                '&from=2015-01-01&to=' + run_dt +\
-                    '&prePoll=false&postPoll=true&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty' +\
-                        '&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&register=gb' +\
-                            '&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber' +\
-                                '&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'
-    
-    # donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?&query=&sort=Value&order=desc&et=pp&et=ppm&et=tp&et=perpar&et=rd&date=Received&from=2015-01-01&to=2022-02-02&rptPd=&prePoll=false&postPoll=true&register=gb&register=ni&register=none&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&isIrishSourceYes=true&isIrishSourceNo=true&includeOutsideSection75=true'
-    # Request the URL and parse the JSON
-    response = requests.get(donor_url)
-    response.raise_for_status() # raise exception if invalid response
-    all_donors = response.json()['Result']
-
-    if not all_donors:
-        return None
-
-    return all_donors
-
-
-def donor_summary(all_donors):
-
-    df = pd.json_normalize(all_donors)
-
-    # Select MP donations only
-    # TODO: Should this be for the MP tables only?
-    # For the top donors it might be worth seeing donors who contributed to specific parties...
-    df = df[df['RegulatedDoneeType'] == "MP - Member of Parliament"]
-
-    # Correct some of the field formatting:
-    # 1. The date is an awful Unix timestamp. Extract the substr containing datetime in seconds.
-    df['DateNum'] = df['AcceptedDate'].str[6:19].astype(int)/1000.
-    df['Date'] = pd.to_datetime(df['DateNum'], unit='s')
-    df['Year'] = df['Date'].dt.year
-
-    # 2. Add a flag for whether the donation was returned
-    df['Returned?'] = ~df['ReturnedDate'].isna()
-
-    # 3. Fix the name format
-    df['Name'] = df['RegulatedEntityName'].str.replace('The Rt Hon | MP', '')
-
-    # The total value of donations per MP
-    df = df[['Returned?','Name','Value','DonorName']]
-    df_mp = df[~df['Returned?']].groupby('Name').agg({'Value':'sum'})
-    df_mp.sort_values(by='Value', inplace=True, ascending=False)
-    df_mp.reset_index(inplace=True)
-    df_mp = df_mp.head(10)
-    json_mp = json.loads(df_mp.to_json(orient='records'))
-
-    print(json_mp)
-
-    # The total value of donations per donor
-    # df_donor = df[~df['Returned?']].groupby('DonorName').agg({'Value':'sum'})
-    # df_donor.sort_values(by=['Value'], inplace=True, ascending=False)
-    # df_donor.reset_index(inplace=True)
-    # json_donor = json.loads(df_donor.to_json(orient='records'))
-
-    # The top 5 donors per year
-    # df_year = df[~df['Returned?']].groupby(['Year','DonorName']).agg({'Value':'sum'})
-    # df_year.sort_values(by=['Year','Value'], inplace=True, ascending=False)
-    # df_year.reset_index(inplace=True)
-    # df_year = df_year.assign(rnk=df_year.groupby(['Year'])['Value']
-    #                                  .rank(method='min', ascending=False))
-    # df_year = df_year[df_year['rnk']<=5]
-    # json_year = json.loads(df_year.to_json(orient='records'))
-
-    return json_mp
-
-
-def get_mp_donations(mp_name):
-
-    name_string = mp_name.replace(" ", "%20")
-
-    # Identify the current date as the maximum date to query.
-    run_dt = date.today().strftime("%Y-%m-%d")
-
-    # Extract the latest date from the SQL db.
-
-    donor_url = 'http://search.electoralcommission.org.uk/api/search/Donations?' +\
-        '&query=' + name_string +\
-            '&sort=AcceptedDate&order=desc&tab=1&open=filter&closed=common&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&date=Received' +\
-                '&from=2015-01-01&to=' + run_dt +\
-                    '&prePoll=false&postPoll=true&donorStatus=individual&donorStatus=tradeunion&donorStatus=company&donorStatus=unincorporatedassociation&donorStatus=publicfund&donorStatus=other&donorStatus=registeredpoliticalparty' +\
-                        '&donorStatus=friendlysociety&donorStatus=trust&donorStatus=limitedliabilitypartnership&donorStatus=impermissibledonor&donorStatus=na&donorStatus=unidentifiabledonor&donorStatus=buildingsociety&register=gb' +\
-                            '&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber' +\
-                                '&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'
-
-    # Request the URL and parse the JSON
-    response = requests.get(donor_url)
-    response.raise_for_status() # raise exception if invalid response
-    all_donors = response.json()['Result']
-
-    if not all_donors:
-        return None
-
-    # Specify the attributes we want to keep
-    donor_cols = [
-        'AcceptedDate', 'ReturnedDate', 'AttemptedConcealment', 'CashValue', 'NonCashValue',
-        'IsAnonymous', 'Value', 'DonorName', 'DonorStatus', 'DonationType'
-    ]
-
-    # For each row extracted from the JSON, add only the required attributes to a smaller list of dictionaries
-    my_donors = []
-    for row in all_donors:
-        # Check for the selected MP name when adding rows to the output
-        if mp_name in row['RegulatedEntityName']:
-            temp_dict = {}
-            for col in donor_cols:
-                temp_dict[col] = row[col]
-            my_donors.append(temp_dict)
-    
-    return my_donors
-
-
 def donor_etl(donors):
     """ Organise the list of donations by year, group by donor and limit by size. """
 
@@ -211,7 +91,7 @@ def donor_etl(donors):
 
     df_out = df2[['year', 'returned', 'value', 'donor_name', 'donor_status', 'donation_type']].copy()
 
-    total = df_out['value'].sum()
+    total = df_out[df_out['returned']!='Y']['value'].sum()
 
     # Note we have to convert the dataframe to a JSON string, then load it as an object.
     json_out = json.loads(df_out.to_json(orient='records'))

@@ -1,8 +1,6 @@
-from flask import Flask, g,  redirect, render_template, request, session
-from flask_session import Session
+from flask import g,  redirect, render_template, request
 from app import app
-from helpers import (apology, clean_name, get_all_donations, get_mp_name, get_mp_details, donor_etl, 
-get_all_donations, get_mp_donations, donor_summary)
+from helpers import apology, clean_name, get_mp_name, get_mp_details, donor_etl
 from db_helpers import update_database, df_query_db, find_donees, highest_mp_donations, highest_mp_donors
 
 
@@ -57,7 +55,6 @@ def fetch():
                 return apology("Invalid name entered")
 
     # STEP 2: Once the MP name is defined, we can get their ID and thumbnail image
-    print("The MP name to search is: " + mp_name)
     mp_display_name, mp_id, mp_const, mp_thumb = get_mp_details(mp_name)
 
     # If the ID was returned successfully, create an object to supply to the results page.

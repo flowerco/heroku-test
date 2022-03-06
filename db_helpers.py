@@ -1,8 +1,7 @@
 import pandas as pd
 import requests
 import re
-from datetime import date, datetime, timedelta
-from app.models import Donations
+from datetime import date, timedelta
 from app import db
 
 # TODO: Limit searches to last 5 years so they don't get outweighed by old higher donations...
@@ -84,7 +83,7 @@ def update_database():
 
     last_update = get_date_of_last_update()
 
-    new_rows = get_new_donations(last_update)
+    new_rows = get_new_donations(last_update + timedelta(days=1))
 
     # Once the check is run, replace the stored last_update value with the current date.
     df_new_date = pd.DataFrame([date.today()], columns=['last_updated'])

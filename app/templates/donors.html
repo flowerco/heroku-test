@@ -20,7 +20,7 @@
             </div>
             <div class="col-md-7">
                 {% if donors is not none %}
-                <h5 class="text-start my-3">Click to view donations by year:</h5>
+                <h5 class="text-start my-3">Click and scroll to view donations by year:</h5>
                 <div class="accordion" id="my-accordion">
                     {% for year in years %}
                     <div class="accordion-item">
@@ -28,7 +28,7 @@
                             <button class="accordion-button collapsed px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProduct{{ year }}"
                                     aria-expanded="false" aria-controls="collapseProduct{{ year }}">{{ year }}</button>
                         </div>
-                        <div class="collapse" id="collapseProduct{{ year }}">
+                        <div class="collapse table-box" id="collapseProduct{{ year }}">
                             <table class="table tablestriped w-auto mx-auto my-3">
                                 <thead class="table-head table-light">
                                     <tr>
@@ -40,7 +40,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="table-body">
-                                    <!-- TODO: Loop through the database entries to display them in this table -->
+                                    <!-- Loop through the database entries to display them in this table -->
                                     {% for donor in donors[0][year] %}
                                         <tr>
                                             <td class="text-start">{{ donor['value'] | gbp }}</td>
