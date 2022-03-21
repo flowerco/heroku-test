@@ -119,5 +119,5 @@ def summary():
 def redirect_to():
     link = 'http://google.com/search?q='
     name = request.args.get('link', 'Boris Johnson')
-    new_link = link + name.replace(' ','+') + "+UK+political+donations"
+    new_link = link + name.replace(' &','').replace(' ','+') + "+UK+political+donations"
     return redirect(new_link), 301
