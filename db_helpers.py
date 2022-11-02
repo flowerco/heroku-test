@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import re
 from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 from app import db
 
 # TODO: Limit searches to last 5 years so they don't get outweighed by old higher donations...
@@ -20,7 +21,7 @@ def highest_mp_donations():
     """ Return the top 10 MPs by amount of donations received. """
 
     query = """ SELECT entity_name, sum(value) AS total 
-    FROM donations WHERE donee_type = 'MP - Member of Parliament' 
+    FROM donations WHERE donee_type in ('MP - Member of Parliament', 'Leadership Candidate')
     GROUP BY entity_name 
     ORDER BY total DESC LIMIT 10"""
 
@@ -82,23 +83,27 @@ def update_database():
     # TODO: We need a session cookie here so that this check is only run once per session.
 
     last_update = get_date_of_last_update()
+    start_date = last_update + timedelta(days=1) if last_update else date.today() - relativedelta(years=3)
 
-    new_rows = get_new_donations(last_update + timedelta(days=1))
-
-    # Once the check is run, replace the stored last_update value with the current date.
-    df_new_date = pd.DataFrame([date.today()], columns=['last_updated'])
-    df_new_date.to_sql("updated", db.engine, if_exists='replace', index=False)
+    if start_date <= date.today():
+        new_rows = get_new_donations(start_date)
+    else:
+        new_rows = None
 
     # If any new donations were returned, add them to the local database.
     if new_rows:
         print('New donations sourced from API. Updating local database.')
+
+        # Replace the stored last_update value with the current date.
+        df_new_date = pd.DataFrame([date.today()], columns=['last_updated'])
+        df_new_date.to_sql("updated", db.engine, if_exists='replace', index=False)
 
          # Convert the new rows into a dataframe for easier manipulation.
         df_new_rows = pd.json_normalize(new_rows)
 
         # Convert the field names to camel case to match the Postgres DB
         df_new_rows.columns = [to_snake_case(x.replace('Regulated','')) for x in df_new_rows.columns]
-        df_out = (df_new_rows[df_new_rows['donee_type']=='MP - Member of Parliament']
+        df_out = (df_new_rows[df_new_rows['donee_type'].isin(['MP - Member of Parliament','Leadership Candidate'])]
           [['ecref','entity_name','value','accepted_date','donor_name','donor_status','donee_type',
               'donation_type','nature_of_donation','received_date','attempted_concealment']].copy())
         
@@ -107,13 +112,11 @@ def update_database():
         df_out['attempt_conceal'] = df_out['attempted_concealment'].fillna('N')
         
         # Adjust the weird unix date format on the received and accepted date fields.
-        df_out['date_num'] = df_out['accepted_date'].str[6:19].astype(int)/1000.
-        df_out['accepted_date'] = pd.to_datetime(df_out['date_num'], unit='s')
-        df_out['date_num2'] = df_out['received_date'].str[6:19].astype(int)/1000.
-        df_out['received_date'] = pd.to_datetime(df_out['date_num2'], unit='s')
+        df_out['accepted_date'] = pd.to_datetime(df_out['accepted_date'].str[6:19], unit='ms')
+        df_out['received_date'] = pd.to_datetime(df_out['received_date'].str[6:19], unit='ms')
 
         # Drop the temporary fields
-        df_out.drop(['attempted_concealment', 'date_num', 'date_num2'], axis=1, inplace=True)
+        df_out.drop(['attempted_concealment'], axis=1, inplace=True)
 
         # Append the new data to the SQL database
         df_out.to_sql('donations', db.session.bind, if_exists='append', index=False)

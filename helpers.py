@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import requests
 import json
+import re
 
 from flask import render_template
 
@@ -45,7 +46,11 @@ def get_mp_details(search_name):
     """ Search for the ID and thumbnail image of the MP by name. """
 
     # If the MP name contains spaces, replace with '%20' for the search URL
-    search_string = search_name.replace(" ", "%20")
+    # TODO - WE NEED TO SEARCH BY FIRST AND LAST NAME, THEN FIND THE INTERSECTION OF THE 2 LISTS.
+    # Searching for 'Liz Truss' doesn't return anything as she's saved as 'Elizabeth' :/ 
+
+    new_name = re.sub(r"\bliz\b",'elizabeth',search_name.lower())   
+    search_string = '%20'.join(new_name.split(' '))
 
     post_url = 'https://members-api.parliament.uk/api/Members/' +\
         'Search?Name=' + search_string + '&skip=0&take=20'
