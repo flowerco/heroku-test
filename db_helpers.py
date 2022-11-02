@@ -94,9 +94,6 @@ def update_database():
     if new_rows:
         print('New donations sourced from API. Updating local database.')
 
-        # Replace the stored last_update value with the current date.
-        df_new_date = pd.DataFrame([date.today()], columns=['last_updated'])
-        df_new_date.to_sql("updated", db.engine, if_exists='replace', index=False)
 
          # Convert the new rows into a dataframe for easier manipulation.
         df_new_rows = pd.json_normalize(new_rows)
@@ -120,6 +117,10 @@ def update_database():
 
         # Append the new data to the SQL database
         df_out.to_sql('donations', db.session.bind, if_exists='append', index=False)
+
+        # Once the donations data is updated, replace the stored last_update value with the current date.
+        df_new_date = pd.DataFrame([date.today()], columns=['last_updated'])
+        df_new_date.to_sql("updated", db.engine, if_exists='replace', index=False)
     else:
         print('No new donations available')
 
