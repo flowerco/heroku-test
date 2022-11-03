@@ -16,7 +16,8 @@ if 'DYNO' in os.environ:
             '\'self\'',
             '\'unsafe-inline\'',
             'code.jquery.com',
-            'cdn.jsdelivr.net'
+            'cdn.jsdelivr.net',
+            'members-api.parliament.uk'
         ]
     }
     Talisman(app, content_security_policy=csp)
