@@ -5,7 +5,6 @@ from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from app import db
 
-# TODO: Limit searches to last 5 years so they don't get outweighed by old higher donations...
 
 def query_db(query, one=False):
     rv = db.engine.execute(query).fetchall()
@@ -128,7 +127,6 @@ def update_database():
 def get_date_of_last_update():
     ''' Pull the stored date at which the local database was last updated. '''
     last_updated = db.engine.execute("SELECT * FROM updated").fetchone()
-
     return (last_updated[0] if last_updated else None)
 
 
