@@ -58,6 +58,10 @@ nav .navbar-heading .green
     color: #2e944b;
 }
 
+nav .navbar-nav {
+    margin-top: 0.5rem;
+}
+
 .col2 {
     border-radius: 20px;
 }
@@ -109,6 +113,9 @@ th {
     nav .flex-bar {
         width:100%;
         margin-right: 0;
+    }
+    nav .navbar-nav {
+        margin-top: 0;
     }
 }
 
