@@ -23,6 +23,8 @@ if 'DYNO' in os.environ:
     Talisman(app, content_security_policy=csp)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 299
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 20
 
 
 ######## DATABASE DETAILS ########
